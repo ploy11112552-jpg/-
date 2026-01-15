@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GPA / GPAX Calculator</title>
+
+<style>
+*{
+    box-sizing:border-box;
+}
+body{
+    margin:0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background-color:#f3dfea;
+}
+section{
+    max-width: 100%;
+    padding: 12px;
+}
+.header{
+    text-align: center;
+    color:#b3156b;
+    margin-bottom:10px;
+}
+.card{
+    background:#fff;
+    padding:14px;
+    border-radius:14px;
+    box-shadow:0 6px 12px rgba(0,0,0,.15);
+}
+label{
+    font-size:14px;
+}
+input, select{
+    width:100%;
+    padding:12px;
+    margin-bottom:10px;
+    border-radius:10px;
+    border:1px solid #ccc;
+    font-size:16px; /* สำคัญสำหรับ iOS */
+}
+button{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+    font-size:17px;
+    background:#e151a1;
+    color:#fff;
+}
+button:active{
+    transform: scale(0.98);
+}
+table{
+    width:100%;
+    border-collapse: collapse;
+    margin-top:12px;
+    font-size:13px;
+}
+th,td{
+    border:1px solid #ddd;
+    padding:6px;
+    text-align:center;
+}
+th{
+    background:#f6c1dc;
+}
+.delete{
+    background:#ff5c5c;
+    color:#fff;
+    font-size:12px;
+    padding:6px 8px;
+    border-radius:8px;
+}
+.result{
+    margin-top:10px;
+    font-size:16px;
+    text-align:center;
+    font-weight:bold;
+    color:#b3156b;
+}
+@media (min-width:600px){
+    section{
+        max-width:520px;
+        margin:auto;
+    }
+}
+</style>
+</head>
+
+<body>
+<section>
+    <div class="header">
+        <h2>คำนวณ GPA / GPAX</h2>
+        <div>รองรับมือถือ iOS & Android</div>
+    </div>
+
+    <div class="card">
+        <label>ปีการศึกษา</label>
+        <input id="year" placeholder="เช่น 2567" inputmode="numeric">
+
+        <label>เทอม</label>
+        <select id="term">
+            <option value="1">เทอม 1</option>
+            <option value="2">เทอม 2</option>
+        </select>
+
+        <label>ชื่อวิชา</label>
+        <input id="subject">
+
+        <label>หน่วยกิต</label>
+        <input id="credit" type="number" inputmode="decimal">
+
+        <label>เกรด</label>
+        <select id="grade">
+            <option value="">เลือกเกรด</option>
+            <option value="4">4</option>
+            <option value="3.5">3.5</option>
+            <option value="3">3</option>
+            <option value="2.5">2.5</option>
+            <option value="2">2</option>
+            <option value="1.5">1.5</option>
+            <option value="1">1</option>
+            <option value="0.5">0.5</option>
+            <option value="0">0</option>
+        </select>
+
+        <button onclick="addSubject()">เพิ่มวิชา</button>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ปี</th>
+                    <th>เทอม</th>
+                    <th>วิชา</th>
+                    <th>หน่วยกิต</th>
+                    <th>เกรด</th>
+                    <th>ลบ</th>
+                </tr>
+            </thead>
+            <tbody id="list"></tbody>
+        </table>
+
+        <div class="result" id="gpa">GPA: 0.00</div>
+        <div class="result" id="gpax">GPAX: 0.00</div>
+    </div>
+</section>
+
+<script>
+let subjects = [];
+
+function addSubject(){
+    let year = yearEl().value;
+    let term = termEl().value;
+    let subject = subjectEl().value;
+    let credit = parseFloat(creditEl().value);
+    let grade = parseFloat(gradeEl().value);
+
+    if(!year || !subject || isNaN(credit) || isNaN(grade)){
+        alert("กรุณากรอกข้อมูลให้ครบ");
+        return;
+    }
+
+    subjects.push({year, term, subject, credit, grade});
+    render();
+    calculate();
+
+    subjectEl().value="";
+    creditEl().value="";
+    gradeEl().value="";
+}
+
+function render(){
+    listEl().innerHTML="";
+    subjects.forEach((s,i)=>{
+        listEl().innerHTML += `
+        <tr>
+            <td>${s.year}</td>
+            <td>${s.term}</td>
+            <td>${s.subject}</td>
+            <td>${s.credit}</td>
+            <td>${s.grade}</td>
+            <td><button class="delete" onclick="del(${i})">ลบ</button></td>
+        </tr>`;
+    });
+}
+
+function del(i){
+    subjects.splice(i,1);
+    render();
+    calculate();
+}
+
+function calculate(){
+    let tc=0,tp=0;
+    subjects.forEach(s=>{
+        tc+=s.credit;
+        tp+=s.credit*s.grade;
+    });
+
+    gpaxEl().innerText="GPAX: "+(tc?tp/tc:0).toFixed(2);
+
+    if(subjects.length){
+        let last = subjects[subjects.length-1];
+        let termSub = subjects.filter(s=>s.year==last.year && s.term==last.term);
+        let c=0,p=0;
+        termSub.forEach(s=>{c+=s.credit;p+=s.credit*s.grade});
+        gpaEl().innerText=`GPA ปี ${last.year} เทอม ${last.term}: ${(p/c).toFixed(2)}`;
+    }else{
+        gpaEl().innerText="GPA: 0.00";
+    }
+}
+
+/* shorthand */
+const yearEl=()=>document.getElementById("year");
+const termEl=()=>document.getElementById("term");
+const subjectEl=()=>document.getElementById("subject");
+const creditEl=()=>document.getElementById("credit");
+const gradeEl=()=>document.getElementById("grade");
+const listEl=()=>document.getElementById("list");
+const gpaEl=()=>document.getElementById("gpa");
+const gpaxEl=()=>document.getElementById("gpax");
+</script>
+</body>
+</html>
